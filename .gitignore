@@ -19,3 +19,5 @@ coverage.xml
 .pytest_cache/
 cover/
 reports/
+
+*pycache
