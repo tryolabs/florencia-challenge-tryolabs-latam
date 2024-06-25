@@ -20,5 +20,5 @@ coverage.xml
 cover/
 reports/
 
-*/__pycache
+__pycache__/
 /challenge/models
