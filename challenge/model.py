@@ -19,6 +19,18 @@ class DelayModel:
         self
     ):
         self._model = self.__load_model(MODEL_PATH)
+        self._features = [
+            "OPERA_Latin American Wings", 
+            "MES_7",
+            "MES_10",
+            "OPERA_Grupo LATAM",
+            "MES_12",
+            "TIPOVUELO_I",
+            "MES_4",
+            "MES_11",
+            "OPERA_Sky Airline",
+            "OPERA_Copa Air"
+        ]
     
     def __load_model(self, filename: str):
         if os.path.exists(MODEL_PATH):
@@ -50,29 +62,25 @@ class DelayModel:
             or
             pd.DataFrame: features.
         """
-        data['min_diff'] = data.apply(self.get_min_diff, axis = 1)
-        data['delay'] = np.where(data['min_diff'] > THRESHOLD_IN_MINUTES, 1, 0)
         
-        top_10_features = [
-            "OPERA_Latin American Wings", 
-            "MES_7",
-            "MES_10",
-            "OPERA_Grupo LATAM",
-            "MES_12",
-            "TIPOVUELO_I",
-            "MES_4",
-            "MES_11",
-            "OPERA_Sky Airline",
-            "OPERA_Copa Air"
-        ]
+        if target_column:
+            data['min_diff'] = data.apply(self.get_min_diff, axis=1)
+            data['delay'] = np.where(data['min_diff'] > THRESHOLD_IN_MINUTES, 1, 0)
         
+        # Generate one-hot encodings
         features = pd.concat([
             pd.get_dummies(data['OPERA'], prefix='OPERA'),
             pd.get_dummies(data['TIPOVUELO'], prefix='TIPOVUELO'),
             pd.get_dummies(data['MES'], prefix='MES')
         ], axis=1)
-        
-        features = features[top_10_features]
+
+        # Ensure all expected feature columns are present
+        for feature in self._features:
+            if feature not in features.columns:
+                features[feature] = 0
+
+        # Select the top features
+        features = features[self._features]
         
         if target_column:
             target = pd.DataFrame(data[target_column])
