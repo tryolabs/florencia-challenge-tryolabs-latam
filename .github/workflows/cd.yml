@@ -1,9 +1,9 @@
 name: 'Continuous Delivery'
 
 on:
-  pull_request: #TODO: For testing
+  pull_request:
     branches:
-      - "develop"
+      - "main"
 
 jobs:
   build:
