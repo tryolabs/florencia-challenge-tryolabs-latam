@@ -20,6 +20,16 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
+
+      # Run training script to have the model available
+      - name: Run training script
+        run: python ./challenge/training.py
+
       # Build and push Docker image
       - name: Build and push Docker image
         env:
@@ -68,16 +78,6 @@ jobs:
       # Set STRESS_URL environment variable for later use
       - name: Set STRESS_URL as env variable to use later the Makefile
         run: echo "STRESS_URL=${{ steps.deploy.outputs.url }}" >> $GITHUB_ENV
-
-      # Install dependencies
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
-
-      # Run training script to have the model available
-      - name: Run training script
-        run: python challenge/training.py
 
       # Run stress tests
       - name: Run stress tests
