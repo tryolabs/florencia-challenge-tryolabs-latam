@@ -4,7 +4,6 @@ pytest~=6.2.5
 pytest-cov~=2.12.1
 mockito~=1.2.2
 Jinja2~=3.0.3
-Flask~=2.0.3
 itsdangerous==2.0.1
 Werkzeug==2.0.3
 
