@@ -1,7 +1,7 @@
 name: 'Continuous Delivery'
 
 on:
-  push:
+  pull_request: #TODO: For testing
     branches:
       - "main"
 
@@ -26,8 +26,8 @@ jobs:
           CONTAINER_IMAGE_URL: ${{ secrets.CONTAINER_IMAGE_URL }}
           GCLOUD_REGION: ${{ secrets.GCLOUD_REGION }}
         run: |
-          docker build -t $CONTAINER_IMAGE_URL:latest .
           gcloud auth configure-docker $GCLOUD_REGION
+          docker build -t $CONTAINER_IMAGE_URL:latest .
           docker push $CONTAINER_IMAGE_URL:latest
 
   deploy:
