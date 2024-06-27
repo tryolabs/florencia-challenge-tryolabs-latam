@@ -3,7 +3,7 @@ name: 'Continuous Delivery'
 on:
   pull_request: #TODO: For testing
     branches:
-      - "main"
+      - "develop"
 
 jobs:
   build:
@@ -26,11 +26,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
 
-      # Run training script to have the model available
-      - name: Run training script
+      # Download model from GCS
+      - name: Download model from GCS
+        env:
+            BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+            MODEL: ${{ secrets.MODEL }}
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          python ./challenge/training.py
+          mkdir -p ./challenge/models
+          gsutil cp gs://$BUCKET_NAME/$MODEL.pkl ./challenge/models/$MODEL.pkl
 
       # Build and push Docker image
       - name: Build and push Docker image
