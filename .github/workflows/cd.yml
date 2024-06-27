@@ -1,0 +1,76 @@
+name: 'Continuous Delivery'
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > /tmp/google-credentials.json
+          gcloud auth activate-service-account --key-file=/tmp/google-credentials.json
+
+      # Build and push Docker image
+      - name: Build and push Docker image
+        env:
+          CONTAINER_IMAGE_URL: ${{ secrets.CONTAINER_IMAGE_URL }}
+          GCLOUD_REGION: ${{ secrets.GCLOUD_REGION }}
+        run: |
+          docker build -t $CONTAINER_IMAGE_URL:latest .
+          gcloud auth configure-docker $GCLOUD_REGION
+          docker push $CONTAINER_IMAGE_URL:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Authenticate to Google Cloud
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      # Deploy container to Cloud Run and capture URL
+      - name: Deploy container to Cloud Run
+        env:
+          CONTAINER_IMAGE_URL: ${{ secrets.CONTAINER_IMAGE_URL }}
+          GCLOUD_REGION: ${{ secrets.GCLOUD_REGION }}
+          GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+        id: deploy
+        run: |
+          echo "Deployment running."
+          URL=$(gcloud run deploy latam-challenge \
+            --image=$CONTAINER_IMAGE_URL:latest \
+            --platform=managed \
+            --allow-unauthenticated \
+            --region=$GCLOUD_REGION \
+            --port=8000 \
+            --project=$GCLOUD_PROJECT_ID \
+            --format="value(status.url)")
+          echo "::set-output name=url::$URL"
+          echo "Image URL: $URL"
+
+      # Set STRESS_URL environment variable for later use
+      - name: Set STRESS_URL as env variable to use later the Makefile
+        run: echo "STRESS_URL=${{ steps.deploy.outputs.url }}" >> $GITHUB_ENV
+
+      # Run stress tests
+      - name: Run stress tests
+        run: |
+          make stress-test STRESS_URL=${{ env.STRESS_URL }}
