@@ -117,6 +117,9 @@ class DelayModel:
         logging.info("Confusion Matrix:\n%s", confusion_matrix(y_test, y_preds))
         logging.info("Classification Report:\n%s", classification_report(y_test, y_preds))
         
+        # Ensure the directory exists before saving the model
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+        
         # Save the model to a file
         with open(MODEL_PATH, 'wb') as f:
             pickle.dump(self._model, f)
