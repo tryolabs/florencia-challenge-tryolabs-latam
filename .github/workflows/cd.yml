@@ -28,7 +28,9 @@ jobs:
 
       # Run training script to have the model available
       - name: Run training script
-        run: python ./challenge/training.py
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python ./challenge/training.py
 
       # Build and push Docker image
       - name: Build and push Docker image
