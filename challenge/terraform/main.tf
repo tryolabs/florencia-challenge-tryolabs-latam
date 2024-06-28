@@ -25,6 +25,11 @@ resource "google_cloud_run_service" "latam_challenge_service" {
   }
 }
 
+resource "google_storage_bucket" "bucket" {
+  name     = var.bucket_name
+  location = var.region
+}
+
 resource "google_cloud_run_service_iam_policy" "noauth" {
   location    = google_cloud_run_service.latam_challenge_service.location
   project     = google_cloud_run_service.latam_challenge_service.project
