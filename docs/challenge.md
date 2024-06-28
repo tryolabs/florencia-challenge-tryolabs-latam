@@ -93,6 +93,11 @@ As the models folder is in the gitignore, it is not uploaded to the repository a
 There is no one perfect way to do CI/CD. I decided to execute the CI workflow on every pull request made to develop and the CD on every pull request made to main. However, it's important to note that in reality most of the times these two stages (CI and CD) are often merged into one. 
 What is more, in this particular case we are not managing a staging or integration environment but it is of paramount importance to have one before getting changes on production. 
 
+In the industry, when managing multiple environments, we typically implement a complete CI/CD workflow for each environment to deploy the necessary resources. For example, we might deploy a service in the development environment with less compute power or memory compared to the same service in the production environment, which generally requires more resources.
+
+Given the time constraints and the fact that this is a test rather than the actual project, I didn't see the necessity of having multiple environments.
+
+
 # Errors fixed to run the notebook:
 
 * When faced with the error: “barplot() takes from 0 to 1 positional arguments but 2 were given.” I added x=.. and y=... to the barplots definition. 
@@ -104,6 +109,5 @@ What is more, in this particular case we are not managing a staging or integrati
 * I changed () for [] in the return type of the preprocess function. 
 
 * The function is_high_season has a bug since it doesn’t consider the time.
-
 
 * I changed the data path in the test_model.py file.
