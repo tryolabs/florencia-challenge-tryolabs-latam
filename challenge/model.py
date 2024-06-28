@@ -150,5 +150,7 @@ class DelayModel:
         Returns:
             (List[int]): predicted targets.
         """
+        if self._model is None:
+            self.__load_model(MODEL_PATH)
         predictions = self._model.predict(features)
         return predictions.tolist()
