@@ -46,13 +46,20 @@ I used Enums to handle validations in the data. I could have used the pydantic v
 
 Also, I added code to the preprocess step in the model to handle unseen classes in training. 
 
-# IaC: Terraform
+## IaC: Terraform
 
 I decided to use Terraform for the infrastructure. Using Terraform for managing cloud infrastructure offers significant advantages, particularly in the realms of automation, consistency, and scalability. As an Infrastructure as Code (IaC) tool, it allows developers and operations teams to define and provision all infrastructure resources using declarative configuration files. This ensures that environments can be replicated across different stages of the development lifecycle, reducing the risk of configuration drift and manual errors. Moreover, Terraform's state management and planning capabilities provide clear visibility into the changes that will be applied, facilitating better collaboration and change management. By automating the deployment of resources, Terraform not only accelerates the provisioning process but also enhances reliability and reduces operational overhead. What is more, its cloud-agnostic nature allows teams to manage resources across multiple cloud providers and on-premises environments with a consistent workflow.
 
 It's important to note that the approach I used here is not the most organized. Typically, I would maintain all infrastructure code in a separate repository and create multiple Terraform environments to manage resources for each environment. Additionally, a better practice would be to have a "common" environment to create shared resources like the artifact registry, which are needed beforehand. For this example, I had to create the artifact registry using the command line because I needed it to push the Docker image. Only after pushing the image could I apply the Terraform configuration to deploy the rest of the infrastructure.
 
-Commands:
+### How would I maintain different environments with terraform? I would create generic modules for the resources that can be instantiated once per environment with their own values for each variable. Everything could be parameterized and tagged by environment. In this way the infrastructure and MLOps workflows can be tidy, separated between environments and extensible. 
+
+Commands: After authenticating, setting the project ID and enabling the APIs.
+
+Create artifact registry: 
+```
+gcloud artifacts repositories create florencia-repo-latam-challenge --repository-format=docker --location=us --description="Docker repository"
+```
 Build docker image: 
 ```
 docker build -t us-docker.pkg.dev/florencia-tryolabs-latam/florencia-repo-latam-challenge/latam-challenge:latest .
