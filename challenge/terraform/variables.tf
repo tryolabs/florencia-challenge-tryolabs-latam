@@ -15,3 +15,9 @@ variable "image_url" {
   type        = string
   default     = "us-docker.pkg.dev/florencia-tryolabs-latam/florencia-repo-latam-challenge/latam-challenge"
 }
+
+variable "bucket_name" {
+  description = "Bucket to save model"
+  type        = string
+  default     = "latam-model-challenge"
+}

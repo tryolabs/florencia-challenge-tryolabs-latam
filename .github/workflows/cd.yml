@@ -1,7 +1,7 @@
 name: 'Continuous Delivery'
 
 on:
-  push:
+  pull_request:
     branches:
       - "main"
 
@@ -14,12 +14,36 @@ jobs:
         uses: actions/checkout@v3
 
       # Authenticate to Google Cloud
-      - name: Authenticate to Google Cloud
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      # Cache dependencies
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Install dependencies
+      - name: Install dependencies
         run: |
-          echo "$GOOGLE_CREDENTIALS" > /tmp/google-credentials.json
-          gcloud auth activate-service-account --key-file=/tmp/google-credentials.json
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
+
+      # Download model from GCS
+      - name: Download model from GCS
+        env:
+            BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+            MODEL: ${{ secrets.MODEL }}
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          mkdir -p ./challenge/models
+          gsutil cp gs://$BUCKET_NAME/$MODEL.pkl ./challenge/models/$MODEL.pkl
 
       # Build and push Docker image
       - name: Build and push Docker image
@@ -27,8 +51,8 @@ jobs:
           CONTAINER_IMAGE_URL: ${{ secrets.CONTAINER_IMAGE_URL }}
           GCLOUD_REGION: ${{ secrets.GCLOUD_REGION }}
         run: |
+          gcloud auth configure-docker us-docker.pkg.dev
           docker build -t $CONTAINER_IMAGE_URL:latest .
-          gcloud auth configure-docker $GCLOUD_REGION
           docker push $CONTAINER_IMAGE_URL:latest
 
   deploy:
@@ -65,6 +89,21 @@ jobs:
             --format="value(status.url)")
           echo "::set-output name=url::$URL"
           echo "Image URL: $URL"
+
+      # Cache dependencies
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
 
       # Set STRESS_URL environment variable for later use
       - name: Set STRESS_URL as env variable to use later the Makefile

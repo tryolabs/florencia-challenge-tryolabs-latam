@@ -7,12 +7,13 @@ from typing import Tuple, Union, List
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from google.cloud import storage
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
 
 MODEL_PATH = os.path.join('challenge', 'models', 'model.pkl')
 THRESHOLD_IN_MINUTES = 15
-
+BUKET_NAME = 'latam-model-challenge'
 class DelayModel:
 
     def __init__(
@@ -44,6 +45,15 @@ class DelayModel:
         fecha_i = datetime.strptime(data['Fecha-I'], '%Y-%m-%d %H:%M:%S')
         min_diff = ((fecha_o - fecha_i).total_seconds())/60
         return min_diff
+    
+    def _upload_to_gcs(self, source_file_name, destination_blob_name):
+        """Uploads a file to the bucket."""
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(BUKET_NAME)
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_filename(source_file_name)
+
+        logging.info(f"File {source_file_name} uploaded to {destination_blob_name}.")
 
     def preprocess(
         self,
@@ -123,6 +133,9 @@ class DelayModel:
         # Save the model to a file
         with open(MODEL_PATH, 'wb') as f:
             pickle.dump(self._model, f)
+        
+        # Upload the model to Google Cloud Storage
+        self._upload_to_gcs(MODEL_PATH, os.path.basename(MODEL_PATH))
 
     def predict(
         self,
@@ -137,5 +150,7 @@ class DelayModel:
         Returns:
             (List[int]): predicted targets.
         """
+        if self._model is None:
+            self.__load_model(MODEL_PATH)
         predictions = self._model.predict(features)
         return predictions.tolist()
